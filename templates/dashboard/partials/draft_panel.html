@@ -1,0 +1,148 @@
+<div id="draft-workbench-panel" class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col space-y-4">
+    
+    <!-- Draft Header & Status -->
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center space-x-2.5">
+            <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            </svg>
+            <h2 class="text-base font-bold text-white">Grounded Draft Reply</h2>
+            {% if draft %}
+                <span class="text-[11px] px-2 py-0.5 rounded font-mono font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                    Attempt #{{ draft.generation_attempt }}
+                </span>
+            {% endif %}
+        </div>
+
+        <div>
+            {% if draft.status == 'synced_to_gmail' %}
+                <span class="text-xs px-2.5 py-1 rounded-full font-bold bg-amber-950/80 text-amber-300 border border-amber-800 flex items-center gap-1">
+                    ✓ Saved in Gmail Drafts
+                </span>
+            {% elif draft.status == 'synced_to_demo' %}
+                <span class="text-xs px-2.5 py-1 rounded-full font-bold bg-blue-950/80 text-blue-300 border border-blue-800 flex items-center gap-1">
+                    ✓ Saved in Demo Drafts
+                </span>
+            {% elif draft.status == 'reviewer_edited' %}
+                <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-purple-950/80 text-purple-300 border border-purple-800">
+                    ✎ Staff Edited
+                </span>
+            {% elif draft.status == 'provider_sync_failed' %}
+                <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-red-950/80 text-red-300 border border-red-800">
+                    ⚠️ Sync Failed
+                </span>
+            {% else %}
+                <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-800">
+                    ● Awaiting Review
+                </span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if msg.is_excluded_from_ai %}
+        <!-- AI Exclusion Warning -->
+        <div class="bg-amber-950/40 border border-amber-800/80 rounded-lg p-4 text-xs text-amber-200 space-y-2">
+            <div class="font-bold flex items-center gap-1.5 text-amber-300 text-sm">
+                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span>Automated AI Draft Bypassed (Confidential Client Policy)</span>
+            </div>
+            <p>
+                This client has strict confidentiality requirements. As a security guardrail, email contents are never transmitted to external AI models.
+            </p>
+            <p class="font-medium text-slate-300">
+                Reason: {{ msg.exclusion_reason }}
+            </p>
+            <p class="italic text-slate-400">
+                Please compose a manual reply in your email client or support desk.
+            </p>
+        </div>
+    {% elif not draft %}
+        <div class="p-8 text-center text-slate-500">
+            <p>No draft reply has been generated for this email yet.</p>
+        </div>
+    {% else %}
+
+        <!-- Citations & Grounding Context -->
+        {% if draft.citations_summary %}
+            <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs space-y-1">
+                <div class="font-semibold text-sky-400 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    <span>Grounded Knowledge Citations:</span>
+                </div>
+                <div class="text-slate-300 leading-relaxed">{{ draft.citations_summary }}</div>
+            </div>
+        {% endif %}
+
+        <!-- Missing Information Safeguard -->
+        {% if draft.missing_information_notes %}
+            <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs space-y-1">
+                <div class="font-semibold text-amber-400 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Anti-Hallucination Notes (Missing Info):</span>
+                </div>
+                <div class="text-slate-300">{{ draft.missing_information_notes }}</div>
+            </div>
+        {% endif %}
+
+        <!-- Draft Reply Composer Form -->
+        <form id="draft-edit-form" class="space-y-3">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1 flex items-center justify-between">
+                    <span>Draft Reply Text (Editable by Reviewer):</span>
+                    <span class="text-[11px] text-slate-500">Tone: {{ draft.tone }}</span>
+                </label>
+                <textarea name="draft_body" rows="12"
+                          class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3.5 text-xs text-slate-200 font-mono leading-relaxed focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition">{{ draft.draft_body }}</textarea>
+            </div>
+
+            <!-- Reviewer Actions -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
+                <button type="button"
+                        hx-post="{% url 'edit_draft' msg.id %}"
+                        hx-include="#draft-edit-form"
+                        hx-target="#draft-workbench-panel"
+                        hx-swap="outerHTML"
+                        class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                    <span>Save Draft Edits</span>
+                </button>
+
+                <button type="button"
+                        hx-post="{% url 'approve_draft' msg.id %}"
+                        hx-include="#draft-edit-form"
+                        hx-target="#draft-workbench-panel"
+                        hx-swap="outerHTML"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>Approve & Save to Email Drafts</span>
+                </button>
+            </div>
+        </form>
+
+        {% if draft.provider_draft_id %}
+            <div class="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs space-y-1">
+                <div class="text-slate-400 font-semibold">Email Provider Synchronization:</div>
+                <div class="text-slate-300 font-mono">Provider Draft ID: <span class="text-sky-400 font-bold">{{ draft.provider_draft_id }}</span></div>
+                <div class="text-[11px] text-slate-500">Draft saved to provider inbox. Staff member sends manually from email client after final check.</div>
+            </div>
+        {% endif %}
+
+        <!-- Collapsible Regeneration Accordion -->
+        <details class="bg-slate-950 border border-slate-800/80 rounded-lg p-3 text-xs group">
+            <summary class="font-semibold text-slate-400 cursor-pointer hover:text-sky-400 transition flex items-center justify-between">
+                <span>⚡ Need changes? Regenerate draft with custom guidance</span>
+                <span class="text-slate-600 group-open:rotate-180 transition">▼</span>
+            </summary>
+            <form method="post" action="{% url 'regenerate_draft' msg.id %}" hx-post="{% url 'regenerate_draft' msg.id %}" hx-target="#draft-workbench-panel" hx-swap="outerHTML" class="mt-3 space-y-2">
+                {% csrf_token %}
+                <textarea name="custom_instructions" rows="2" placeholder="e.g. Make tone more concise; offer a 15-minute alignment call; mention the Q4 roadmap..."
+                          class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500"></textarea>
+                <button type="submit" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition cursor-pointer">
+                    Regenerate Draft with Claude
+                </button>
+            </form>
+        </details>
+
+    {% endif %}
+</div>

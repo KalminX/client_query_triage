@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Review Queue | AI Client Query Triage{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+    
+    <!-- Page Header & Metrics Summary -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+                <span>Client Support Review Queue</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono border border-slate-700">
+                    {{ total_count }} Total
+                </span>
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">
+                AI-classified incoming queries with grounded draft replies. Review, edit, and approve drafts to synchronize directly with your email provider.
+            </p>
+        </div>
+
+        <!-- Quick Action / Status Badges -->
+        <div class="flex items-center gap-2">
+            <a href="{% url 'daily_summary' %}" class="bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5 shadow-sm">
+                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <span>SLA Analytics</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Pills & Search Bar -->
+    <div class="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
+        
+        <!-- Status Filter Tabs -->
+        <div class="flex flex-wrap items-center gap-1.5">
+            <a href="?status=all{% if current_urgency %}&urgency={{ current_urgency }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}"
+               class="text-xs px-3 py-1.5 rounded-lg font-medium transition {% if current_status == 'all' %}bg-sky-600 text-white font-semibold{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-800{% endif %}">
+                All Queries
+            </a>
+            <a href="?status=draft_ready{% if current_urgency %}&urgency={{ current_urgency }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}"
+               class="text-xs px-3 py-1.5 rounded-lg font-medium transition {% if current_status == 'draft_ready' %}bg-emerald-600 text-white font-semibold{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-800{% endif %}">
+                Drafts Ready
+            </a>
+            <a href="?status=escalated{% if current_urgency %}&urgency={{ current_urgency }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}"
+               class="text-xs px-3 py-1.5 rounded-lg font-medium transition {% if current_status == 'escalated' %}bg-rose-600 text-white font-semibold{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-800{% endif %}">
+                Escalations
+            </a>
+            <a href="?status=overdue{% if current_urgency %}&urgency={{ current_urgency }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}"
+               class="text-xs px-3 py-1.5 rounded-lg font-medium transition {% if current_status == 'overdue' %}bg-red-700 text-white font-semibold{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-800{% endif %}">
+                ⚠️ SLA Overdue
+            </a>
+            <a href="?status=confidential{% if current_urgency %}&urgency={{ current_urgency }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}"
+               class="text-xs px-3 py-1.5 rounded-lg font-medium transition {% if current_status == 'confidential' %}bg-amber-600 text-white font-semibold{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-800{% endif %}">
+                🔒 Confidential (AI Excluded)
+            </a>
+            <a href="?status=approved{% if current_urgency %}&urgency={{ current_urgency }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}"
+               class="text-xs px-3 py-1.5 rounded-lg font-medium transition {% if current_status == 'approved' %}bg-blue-600 text-white font-semibold{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-800{% endif %}">
+                Approved / Synced
+            </a>
+        </div>
+
+        <!-- Search & Dropdown Filters -->
+        <div class="flex items-center gap-2">
+            <!-- Search Form -->
+            <form method="get" class="relative" hx-get="{% url 'inbox' %}" hx-trigger="keyup changed delay:300ms from:input[name='q'], change from:select" hx-target="#message-table-container" hx-swap="outerHTML">
+                <input type="hidden" name="status" value="{{ current_status }}">
+                <div class="flex items-center gap-2">
+                    <!-- Category Dropdown -->
+                    <select name="category" class="bg-slate-950 border border-slate-700 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-sky-500">
+                        <option value="">All Categories</option>
+                        {% for cat_val, cat_label in categories %}
+                            <option value="{{ cat_val }}" {% if current_category == cat_val %}selected{% endif %}>{{ cat_label }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <!-- Urgency Dropdown -->
+                    <select name="urgency" class="bg-slate-950 border border-slate-700 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-sky-500">
+                        <option value="">All Urgencies</option>
+                        {% for urg_val, urg_label in urgencies %}
+                            <option value="{{ urg_val }}" {% if current_urgency == urg_val %}selected{% endif %}>{{ urg_label }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <input type="text" name="q" value="{{ search_query }}" placeholder="Search queries..."
+                               class="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg pl-8 pr-3 py-1.5 w-44 md:w-56 focus:outline-none focus:border-sky-500 placeholder-slate-500">
+                        <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dynamic Message Table -->
+    {% include 'dashboard/partials/message_table.html' %}
+
+</div>
+{% endblock %}

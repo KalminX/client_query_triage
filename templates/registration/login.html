@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In | AI Client Query Triage{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto my-auto py-12 px-6 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl">
+    <div class="text-center mb-6">
+        <h1 class="text-xl font-bold text-white tracking-tight">Staff Sign In</h1>
+        <p class="text-xs text-slate-400 mt-1">Access the AI Support Triage and Draft Review Queue</p>
+    </div>
+
+    <form method="post" class="space-y-4 text-xs">
+        {% csrf_token %}
+        <div>
+            <label class="block text-slate-400 mb-1 font-semibold">Username</label>
+            <input type="text" name="username" required
+                   class="w-full bg-slate-950 border border-slate-700 text-slate-200 rounded-lg p-2.5 focus:outline-none focus:border-sky-500">
+        </div>
+        <div>
+            <label class="block text-slate-400 mb-1 font-semibold">Password</label>
+            <input type="password" name="password" required
+                   class="w-full bg-slate-950 border border-slate-700 text-slate-200 rounded-lg p-2.5 focus:outline-none focus:border-sky-500">
+        </div>
+
+        <button type="submit" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 rounded-lg transition shadow-md">
+            Sign In
+        </button>
+
+        <div class="p-3 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-400 space-y-1 mt-4">
+            <div class="font-semibold text-slate-300">Demo Staff Accounts:</div>
+            <div>• <code class="text-sky-300">admin</code> / <code class="text-slate-300">demo12345</code> (Administrator)</div>
+            <div>• <code class="text-sky-300">sarah.ops</code> / <code class="text-slate-300">demo12345</code> (Tier 1 Support Lead)</div>
+            <div>• <code class="text-sky-300">alex.billing</code> / <code class="text-slate-300">demo12345</code> (Billing Specialist)</div>
+            <div>• <code class="text-sky-300">dr.elena</code> / <code class="text-slate-300">demo12345</code> (Technical Lead)</div>
+            <div>• <code class="text-sky-300">jordan.security</code> / <code class="text-slate-300">demo12345</code> (Security Officer)</div>
+        </div>
+    </form>
+</div>
+{% endblock %}

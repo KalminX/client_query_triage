@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Knowledge Base | AI Client Query Triage{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header & Search -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <span>Knowledge Base & Policy Grounding Store</span>
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">
+                Verified SOPs, support policies, and technical guidelines retrieved by the AI engine to ground draft responses and eliminate hallucinations.
+            </p>
+        </div>
+
+        <form method="get" class="flex items-center gap-2">
+            <input type="text" name="q" value="{{ search_q }}" placeholder="Search articles, tags, SOPs..."
+                   class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 w-64 focus:outline-none focus:border-sky-500">
+            <button type="submit" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">
+                Search
+            </button>
+        </form>
+    </div>
+
+    <!-- Article Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% for art in articles %}
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-md flex flex-col justify-between space-y-4">
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-sky-400 bg-sky-950/80 px-2.5 py-0.5 rounded border border-sky-800">
+                            {{ art.category }}
+                        </span>
+                        <div class="flex items-center space-x-2 text-xs text-slate-400 font-mono">
+                            <span>v{{ art.version }}</span>
+                            {% if art.is_published %}
+                                <span class="text-emerald-400">● Published</span>
+                            {% else %}
+                                <span class="text-slate-500">Draft</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <h2 class="text-base font-bold text-white leading-snug">{{ art.title }}</h2>
+
+                    {% if art.client_specific %}
+                        <div class="text-[11px] text-amber-300 font-semibold bg-amber-950/50 px-2 py-0.5 rounded border border-amber-800/80 inline-block">
+                            🔒 Restrict to Client: {{ art.client_specific.name }}
+                        </div>
+                    {% endif %}
+
+                    <div class="text-xs text-slate-300 font-mono bg-slate-950 p-3 rounded-lg border border-slate-800/80 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
+{{ art.content }}
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-800/80 text-[11px] text-slate-500">
+                    <div class="flex items-center gap-1">
+                        <span>Tags:</span>
+                        {% for t in art.tags %}
+                            <span class="bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">#{{ t }}</span>
+                        {% empty %}
+                            <span>-</span>
+                        {% endfor %}
+                    </div>
+                    <span>Updated: {{ art.updated_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-span-2 text-center py-12 text-slate-500">
+                <p>No knowledge base articles found.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

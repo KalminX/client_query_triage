@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Routing & Escalation Rules | AI Client Query Triage{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header -->
+    <div class="border-b border-slate-800 pb-4">
+        <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+            <span>Routing & Escalation Rules</span>
+        </h1>
+        <p class="text-xs text-slate-400 mt-1">
+            Configurable deterministic routing policies that assign queries, trigger Slack alerts, and escalate critical issues.
+        </p>
+    </div>
+
+    <!-- Rules Table -->
+    <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 shadow-xl">
+        <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-950 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                <tr>
+                    <th class="py-3 px-4">Priority</th>
+                    <th class="py-3 px-4">Rule Name</th>
+                    <th class="py-3 px-4">Matching Criteria</th>
+                    <th class="py-3 px-4">Target Assignee & Team</th>
+                    <th class="py-3 px-4">Notification Channel</th>
+                    <th class="py-3 px-4 text-center">Escalation</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/80">
+                {% for r in rules %}
+                    <tr class="hover:bg-slate-800/50 transition">
+                        <td class="py-3 px-4 font-mono font-bold text-sky-400">#{{ r.priority_order }}</td>
+                        <td class="py-3 px-4 font-semibold text-slate-200">{{ r.name }}</td>
+                        <td class="py-3 px-4 space-y-1">
+                            {% if r.match_category %}<div class="text-[11px] text-slate-300"><span class="text-slate-500">Category:</span> {{ r.match_category }}</div>{% endif %}
+                            {% if r.match_urgency %}<div class="text-[11px] text-slate-300"><span class="text-slate-500">Urgency:</span> <span class="uppercase font-semibold text-amber-400">{{ r.match_urgency }}</span></div>{% endif %}
+                            {% if r.match_client_tier %}<div class="text-[11px] text-slate-300"><span class="text-slate-500">Tier:</span> <span class="uppercase font-semibold text-purple-400">{{ r.match_client_tier }}</span></div>{% endif %}
+                            {% if r.match_keywords %}<div class="text-[11px] text-slate-400 truncate max-w-xs"><span class="text-slate-500">Keywords:</span> {{ r.match_keywords }}</div>{% endif %}
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="font-semibold text-slate-200">
+                                {% if r.action_assign_to %}
+                                    👤 {{ r.action_assign_to.username }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </div>
+                            <div class="text-[11px] text-slate-400">{{ r.action_assign_team|default:"General Support" }}</div>
+                        </td>
+                        <td class="py-3 px-4 font-mono text-sky-400">{{ r.action_notify_channel|default:"#support-inbox" }}</td>
+                        <td class="py-3 px-4 text-center">
+                            {% if r.action_escalate %}
+                                <span class="px-2 py-0.5 rounded font-bold bg-rose-950 text-rose-300 border border-rose-800">
+                                    ▲ TRUE
+                                </span>
+                            {% else %}
+                                <span class="text-slate-500 font-mono">FALSE</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="p-4 text-center text-slate-500">No routing rules configured.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

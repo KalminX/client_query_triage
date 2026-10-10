@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+
+{% block title %}Query #{{ msg.id }} | Review Workbench{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Top Navigation Breadcrumb & Actions Bar -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'inbox' %}" class="bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white p-2 rounded-lg border border-slate-800 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            </a>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h1 class="text-xl font-bold text-white tracking-tight">Query #{{ msg.id }}: {{ msg.subject }}</h1>
+                </div>
+                <div class="text-xs text-slate-400 mt-0.5 flex items-center space-x-2">
+                    <span>Received: {{ msg.received_at|date:"Y-m-d H:i" }} UTC</span>
+                    <span>•</span>
+                    <span>Provider: {{ msg.get_provider_display }}</span>
+                    <span>•</span>
+                    <span class="font-mono text-slate-500">Msg ID: {{ msg.provider_message_id }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status & Reassign Action Buttons -->
+        <div class="flex items-center gap-2">
+            <!-- Update Status Dropdown Form -->
+            <form method="post" action="{% url 'update_status' msg.id %}" class="flex items-center gap-1.5">
+                {% csrf_token %}
+                <select name="status" onchange="this.form.submit()" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-sky-500">
+                    {% for st_val, st_lbl in msg.PROCESSING_STATUS_CHOICES %}
+                        <option value="{{ st_val }}" {% if msg.processing_status == st_val %}selected{% endif %}>Status: {{ st_lbl }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Grid: Left Context & Right Draft Composer -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT COLUMN: Client, Message, AI Triage, Knowledge Sources, Audit (7 cols) -->
+        <div class="lg:col-span-7 space-y-6">
+
+            <!-- 1. Client Identity Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-md">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        <span>Client Profile & SLA Policy</span>
+                    </span>
+                    {% if msg.client.is_confidential %}
+                        <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">
+                            🔒 CONFIDENTIAL CLIENT
+                        </span>
+                    {% endif %}
+                </div>
+
+                {% if msg.client %}
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                        <div>
+                            <div class="text-slate-500">Client Name</div>
+                            <div class="font-semibold text-slate-200 mt-0.5">{{ msg.client.name }}</div>
+                        </div>
+                        <div>
+                            <div class="text-slate-500">Support Tier</div>
+                            <div class="font-semibold text-sky-400 uppercase mt-0.5">{{ msg.client.support_tier }}</div>
+                        </div>
+                        <div>
+                            <div class="text-slate-500">SLA Response Target</div>
+                            <div class="font-semibold text-slate-200 mt-0.5">{{ msg.client.response_time_target_minutes }} minutes</div>
+                        </div>
+                        <div>
+                            <div class="text-slate-500">Account Manager</div>
+                            <div class="font-semibold text-slate-200 mt-0.5">{{ msg.client.assigned_account_manager.username|default:"Unassigned" }}</div>
+                        </div>
+                    </div>
+
+                    {% if msg.client.internal_notes %}
+                        <div class="mt-3 p-2.5 rounded bg-slate-950 border border-slate-800 text-xs text-amber-300/90 flex items-start gap-2">
+                            <span class="font-bold uppercase text-[10px] text-amber-400 mt-0.5">Staff Note:</span>
+                            <span>{{ msg.client.internal_notes }}</span>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-xs text-slate-500 italic">No registered client account matched. Ingested as external inquiry.</div>
+                {% endif %}
+            </div>
+
+            <!-- 2. Original Client Email Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-md space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Incoming Message</span>
+                    </div>
+                    <span class="text-xs text-slate-500 font-mono">Thread: {{ msg.thread_id }}</span>
+                </div>
+
+                <div class="text-xs space-y-1 bg-slate-950 p-3 rounded-lg border border-slate-800/80">
+                    <div><span class="text-slate-500">From:</span> <span class="text-slate-200 font-medium">{{ msg.sender_name }} &lt;{{ msg.sender_email }}&gt;</span></div>
+                    <div><span class="text-slate-500">To:</span> <span class="text-slate-200">{{ msg.recipient_email }}</span></div>
+                    <div><span class="text-slate-500">Subject:</span> <span class="text-slate-100 font-semibold">{{ msg.subject }}</span></div>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-lg border border-slate-800/80 text-xs text-slate-200 font-mono whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
+{{ msg.body_plain }}
+                </div>
+            </div>
+
+            <!-- 3. AI Triage & Classification Card -->
+            {% if triage %}
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-md space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">AI Classification & Urgency Reasoning</span>
+                        </div>
+                        <span class="text-xs font-mono text-slate-500">{{ triage.model_name }}</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                        <div>
+                            <div class="text-slate-500">Category</div>
+                            <div class="font-bold text-slate-200 mt-0.5">{{ triage.get_category_display }}</div>
+                        </div>
+                        <div>
+                            <div class="text-slate-500">Assessed Urgency</div>
+                            <div class="mt-0.5">
+                                {% if triage.urgency == 'critical' %}
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-600 text-white">CRITICAL</span>
+                                {% elif triage.urgency == 'high' %}
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">HIGH</span>
+                                {% else %}
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">{{ triage.urgency|upper }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-slate-500">Client Sentiment</div>
+                            <div class="font-medium text-slate-300 mt-0.5 capitalize">{{ triage.sentiment }}</div>
+                        </div>
+                        <div>
+                            <div class="text-slate-500">Confidence Score</div>
+                            <div class="font-mono font-bold text-sky-400 mt-0.5">{{ triage.confidence_score|floatformat:2 }} / 1.0</div>
+                        </div>
+                    </div>
+
+                    <div class="text-xs bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
+                        <div>
+                            <span class="font-semibold text-slate-400">Intent Summary:</span>
+                            <span class="text-slate-200 ml-1">{{ triage.intent_summary }}</span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-slate-400">Requested Action:</span>
+                            <span class="text-slate-200 ml-1">{{ triage.requested_action }}</span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-slate-400">Urgency Rationale:</span>
+                            <span class="text-slate-300 ml-1">{{ triage.urgency_reasoning }}</span>
+                        </div>
+                    </div>
+
+                    {% if triage.is_deterministic_override %}
+                        <div class="p-2.5 rounded bg-rose-950/40 border border-rose-800 text-xs text-rose-200 flex items-center gap-2">
+                            <span class="font-bold text-rose-300">Deterministic Override:</span>
+                            <span>{{ triage.override_rule_name }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <!-- 4. Retrieved Knowledge Base Sources -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-md space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Retrieved Grounding Sources ({{ sources|length }})</span>
+                    </div>
+                </div>
+
+                <div class="space-y-2.5">
+                    {% for src in sources %}
+                        <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg text-xs space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-sky-300">{{ src.source_title }} (v{{ src.source_version }})</span>
+                                <span class="text-[11px] text-slate-500 font-mono">Score: {{ src.relevance_score }}</span>
+                            </div>
+                            <p class="text-slate-300 italic border-l-2 border-slate-700 pl-2 mt-1">
+                                "{{ src.supporting_passage }}"
+                            </p>
+                        </div>
+                    {% empty %}
+                        <div class="text-xs text-slate-500 italic p-2">
+                            {% if msg.is_excluded_from_ai %}
+                                Knowledge retrieval bypassed for confidential client.
+                            {% else %}
+                                No matching knowledge articles retrieved for this query.
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 5. Audit Event History Timeline -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-md space-y-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 border-b border-slate-800 pb-2">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Audit Trail & Processing Timeline</span>
+                </span>
+
+                <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {% for event in audit_events %}
+                        <div class="text-xs bg-slate-950 border border-slate-800/80 p-2.5 rounded-lg flex items-start justify-between">
+                            <div>
+                                <span class="font-semibold text-slate-300">{{ event.actor_name }}:</span>
+                                <span class="text-slate-400 ml-1">{{ event.summary }}</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500 font-mono whitespace-nowrap ml-2">
+                                {{ event.created_at|date:"H:i:s" }}
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Add Note Form -->
+                <form method="post" action="{% url 'add_note' msg.id %}" class="flex gap-2 pt-2 border-t border-slate-800">
+                    {% csrf_token %}
+                    <input type="text" name="note_text" placeholder="Add internal staff note to audit history..."
+                           class="flex-1 bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-sky-500">
+                    <button type="submit" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition">
+                        Add Note
+                    </button>
+                </form>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Grounded Reply Draft Composer (5 cols) -->
+        <div class="lg:col-span-5 space-y-6 sticky top-20 self-start">
+            {% include 'dashboard/partials/draft_panel.html' %}
+
+            <!-- Assignment Controls Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-md space-y-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 border-b border-slate-800 pb-2">
+                    <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <span>Ticket Assignment</span>
+                </span>
+
+                <form method="post" action="{% url 'assign_message' msg.id %}" class="space-y-3">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <label class="block text-slate-500 mb-1">Assignee</label>
+                            <select name="assigned_to" class="w-full bg-slate-950 border border-slate-700 text-slate-200 rounded-lg p-2 focus:outline-none focus:border-sky-500">
+                                <option value="">-- Select Staff --</option>
+                                {% for u in staff_users %}
+                                    <option value="{{ u.id }}" {% if msg.assignments.first.assigned_to.id == u.id %}selected{% endif %}>{{ u.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-500 mb-1">Team</label>
+                            <input type="text" name="assigned_team" value="{{ msg.assignments.first.assigned_team|default:'' }}" placeholder="e.g. Engineering"
+                                   class="w-full bg-slate-950 border border-slate-700 text-slate-200 rounded-lg p-2 focus:outline-none focus:border-sky-500">
+                        </div>
+                    </div>
+                    <div>
+                        <input type="text" name="notes" placeholder="Assignment routing notes..."
+                               class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg p-2 focus:outline-none focus:border-sky-500">
+                    </div>
+                    <button type="submit" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2 rounded-lg border border-slate-700 transition">
+                        Update Assignment
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

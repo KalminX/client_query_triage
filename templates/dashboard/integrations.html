@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Integrations & Security Settings | AI Client Query Triage{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header -->
+    <div class="border-b border-slate-800 pb-4">
+        <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+            <span>Integrations, Security Safeguards & Provider Status</span>
+        </h1>
+        <p class="text-xs text-slate-400 mt-1">
+            Least-privilege email adapter settings, Anthropic Claude model configuration, and client confidentiality policies.
+        </p>
+    </div>
+
+    <!-- Safeguard Warning Callout -->
+    <div class="bg-red-950/30 border border-red-900/80 rounded-xl p-4 text-xs text-red-200 flex items-start gap-3">
+        <svg class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        <div class="space-y-1">
+            <div class="font-bold text-red-300 text-sm">Human-in-the-Loop Architecture Guarantee</div>
+            <p>
+                This application is strictly designed with <strong>ZERO automated email sending</strong>. 
+                All approved drafts are created as pending drafts in Gmail or the demo store. Staff members retain 100% final authorization and click Send manually from their email client.
+            </p>
+        </div>
+    </div>
+
+    <!-- Provider Configuration Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- AI Engine -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <span>Claude AI Engine</span>
+                </h3>
+                <span class="text-xs px-2 py-0.5 rounded font-mono font-bold {% if AI_MODE == 'claude' %}bg-purple-900/60 text-purple-300{% else %}bg-emerald-900/60 text-emerald-300{% endif %}">
+                    {{ AI_MODE|upper }}
+                </span>
+            </div>
+            <div class="text-xs text-slate-400 space-y-2">
+                <div>Model: <code class="font-mono text-slate-200">{{ ANTHROPIC_MODEL }}</code></div>
+                <div>Status: <span class="text-emerald-400 font-semibold">Active & Validated</span></div>
+                <div class="text-[11px] text-slate-500 pt-2 border-t border-slate-800">
+                    Switch between local deterministic mock and production Claude via <code class="text-sky-300">AI_MODE=claude</code> in <code class="text-sky-300">.env</code>.
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Provider -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    <span>Email Ingestion & Drafts</span>
+                </h3>
+                <span class="text-xs px-2 py-0.5 rounded font-mono font-bold bg-amber-900/60 text-amber-300">
+                    {{ EMAIL_MODE|upper }}
+                </span>
+            </div>
+            <div class="text-xs text-slate-400 space-y-2">
+                <div>Scopes: <code class="font-mono text-slate-200">gmail.readonly, gmail.compose</code></div>
+                <div>Send Permission: <span class="text-rose-400 font-bold">DISABLED (Least Privilege)</span></div>
+                <div class="text-[11px] text-slate-500 pt-2 border-t border-slate-800">
+                    Supports Google Workspace & Gmail shared inboxes. Saves drafts with thread headers (<code class="text-sky-300">In-Reply-To</code>).
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Adapter -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    <span>Alert Dispatcher</span>
+                </h3>
+                <span class="text-xs px-2 py-0.5 rounded font-mono font-bold bg-sky-900/60 text-sky-300">
+                    {{ NOTIFICATION_MODE|upper }}
+                </span>
+            </div>
+            <div class="text-xs text-slate-400 space-y-2">
+                <div>Channel Adapters: <span class="text-slate-200">Slack, Teams, Audit Log</span></div>
+                <div>Status: <span class="text-emerald-400 font-semibold">Ready</span></div>
+                <div class="text-[11px] text-slate-500 pt-2 border-t border-slate-800">
+                    Routes critical escalations to configured webhook endpoints with rich operational payloads.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Client Confidentiality Policies Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-md space-y-4">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <span>Client Confidentiality & AI-Exclusion Directory</span>
+        </h3>
+        <p class="text-xs text-slate-400">
+            Clients marked as confidential are automatically and strictly excluded from external LLM processing in backend services.
+        </p>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-800">
+                    <tr>
+                        <th class="py-2.5 px-3">Client</th>
+                        <th class="py-2.5 px-3">Primary Domain</th>
+                        <th class="py-2.5 px-3">Tier</th>
+                        <th class="py-2.5 px-3">SLA Target</th>
+                        <th class="py-2.5 px-3">AI Processing Policy</th>
+                        <th class="py-2.5 px-3">Confidentiality Rationale</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                    {% for c in clients %}
+                        <tr>
+                            <td class="py-2.5 px-3 font-semibold text-slate-200">{{ c.name }}</td>
+                            <td class="py-2.5 px-3 font-mono text-slate-400">{{ c.primary_domain|default:"-" }}</td>
+                            <td class="py-2.5 px-3 uppercase font-semibold text-sky-400">{{ c.support_tier }}</td>
+                            <td class="py-2.5 px-3">{{ c.response_time_target_minutes }} mins</td>
+                            <td class="py-2.5 px-3">
+                                {% if c.is_confidential %}
+                                    <span class="px-2 py-0.5 rounded font-bold bg-amber-950 text-amber-300 border border-amber-800">
+                                        🔒 BYPASS AI (STRICT)
+                                    </span>
+                                {% else %}
+                                    <span class="text-emerald-400 font-semibold">✓ Automated AI Triage</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-2.5 px-3 text-slate-400 italic">{{ c.confidentiality_reason|default:"Standard account privacy." }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
