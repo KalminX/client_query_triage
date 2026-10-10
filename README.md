@@ -170,3 +170,16 @@ Detailed technical documentation is available in `docs/portfolio/`:
 - [Security & Governance](file:///Users/kalmin/projects/client_query_triage/docs/portfolio/security.md)
 - [Reproducible Demo Scenarios](file:///Users/kalmin/projects/client_query_triage/docs/portfolio/demo-scenarios.md)
 - [Accuracy & Safety Evaluation](file:///Users/kalmin/projects/client_query_triage/docs/portfolio/evaluation.md)
+
+
+## 🖼️ Application Screenshots
+
+| Unified Triage & Priority Inbox | Interactive Response Workbench |
+|:---:|:---:|
+| ![Triage Inbox](screenshots/frame_01_inbox.png) | ![Response Workbench](screenshots/frame_02_workbench.png) |
+| *Real-time sentiment scoring, SLA timer, & automated routing* | *Draft response generator with policy & RAG citations* |
+
+| Smart Draft Regeneration & Tone Shift | Operational Analytics & Trends |
+|:---:|:---:|
+| ![Regeneration](screenshots/frame_03_regen.png) | ![Analytics](screenshots/frame_04_analytics.png) |
+| *Context-aware tone adjustment and guardrail compliance* | *Resolution times, category distributions, & sentiment heatmaps* |
